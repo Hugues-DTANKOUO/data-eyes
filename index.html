@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Interface de schéma de base de données permettant de créer et modifier des schémas SQL">
+    <title>Interface de Schéma de Base de Données</title>
+    <style>
+        :root {
+            --primary-color: #4a6da7;
+            --primary-dark: #3a5b8c;
+            --secondary-color: #f8f9fa;
+            --border-color: #dee2e6;
+            --hover-color: #e9ecef;
+            --success-color: #28a745;
+            --success-dark: #218838;
+            --danger-color: #dc3545;
+            --danger-dark: #c82333;
+            --light-gray: #f5f5f5;
+            --text-color: #333;
+            --text-muted: #666;
+            --shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            --focus-shadow: 0 0 0 2px rgba(74, 109, 167, 0.2);
+            --transition: 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--light-gray);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .section {
+            background-color: white;
+            margin-bottom: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color var(--transition);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: var(--focus-shadow);
+        }
+
+        .linked-table, .column-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            margin: 10px 0;
+            padding: 15px;
+            background-color: var(--secondary-color);
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .linked-table select, .linked-table input {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        button:focus {
+            outline: none;
+            box-shadow: var(--focus-shadow);
+        }
+
+        button.add-btn {
+            background-color: var(--success-color);
+        }
+
+        button.add-btn:hover {
+            background-color: var(--success-dark);
+        }
+
+        button.remove-btn {
+            background-color: var(--danger-color);
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+        }
+
+        button.remove-btn:hover {
+            background-color: var(--danger-dark);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            box-shadow: 0 2px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) {
+            background-color: var(--secondary-color);
+        }
+
+        tr:hover {
+            background-color: var(--hover-color);
+        }
+
+        td input {
+            width: 100%;
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        .action-column {
+            width: 70px;
+            text-align: center;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            gap: 10px;
+        }
+
+        .btn-group button {
+            flex: 1;
+        }
+        
+        .btn-icon {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .column-definition {
+            transition: background-color var(--transition);
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: var(--secondary-color);
+            border-radius: 6px;
+        }
+        
+        .column-definition:hover {
+            background-color: var(--hover-color) !important;
+        }
+        
+        .pagination {
+            font-size: 14px;
+        }
+        
+        .pagination-controls button {
+            padding: 5px 10px;
+            margin: 0 5px;
+        }
+        
+        .pagination-controls button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Styles pour le tableau de prévisualisation */
+        #dataPreviewTable {
+            table-layout: fixed;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        #dataPreviewTable th {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        #dataPreviewTable td {
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #exportCSVBtn {
+            background-color: var(--primary-color);
+            margin: 0 10px;
+        }
+        
+        #exportCSVBtn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .table-container {
+            position: relative;
+            min-height: 200px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        /* CSS pour la fonctionnalité de basculement du panneau des colonnes */
+        .columns-container {
+            display: flex;
+            margin-bottom: 20px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .columns-list {
+            max-height: 400px; /* Hauteur maximale correspondant à celle du tableau */
+            overflow-y: auto; /* Défilement vertical automatique si nécessaire */
+            flex: 1;
+            margin-right: 20px;
+            transition: all 0.3s ease-in-out;
+            min-width: 250px; /* Largeur minimale pour assurer la visibilité */
+            /* Ajout d'une légère bordure et ombre pour indiquer visuellement la zone défilante */
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+        }
+
+        /* Style de la barre de défilement pour une meilleure UX */
+        .columns-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .columns-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .columns-list::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .columns-list::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Assurer que le bouton d'ajout reste fixe en bas de la zone des colonnes */
+        #columnsBottomArea {
+            position: sticky;
+            bottom: 0;
+            background-color: white;
+            padding-top: 10px;
+            padding-bottom: 5px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 10px;
+        }
+
+        .columns-preview {
+            flex: 2;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Styles pour l'état caché du panneau des colonnes */
+        .columns-container.panel-hidden .columns-list {
+            max-width: 0;
+            min-width: 0;
+            overflow: hidden;
+            margin-right: 0;
+            opacity: 0;
+            flex: 0 0 0;
+            padding: 0;
+            border: none;
+        }
+
+        .columns-container.panel-hidden .columns-preview {
+            flex: 1 1 100%; /* flex-grow, flex-shrink, flex-basis */
+        }
+
+        /* Style pour le bouton de basculement */
+        .toggle-panel-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .toggle-panel-btn:hover {
+            background-color: var(--primary-dark);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .toggle-panel-btn i {
+            margin-right: 8px;
+        }
+
+        /* Icône pour le bouton (utilisant une police d'icônes ou Unicode) */
+        .toggle-icon::before {
+            content: "⇄";
+            margin-right: 8px;
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+
+        /* Animation de l'icône lors du basculement */
+        .panel-hidden .toggle-icon::before {
+            transform: rotate(180deg);
+        }
+
+        /* Styles pour la section déroulante des colonnes */
+        .column-header {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .column-details {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: var(--light-gray);
+            border-radius: 4px;
+            display: none;
+        }
+
+        .column-details label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .column-details input, .column-details textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .column-details textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--success-color);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            box-shadow: var(--shadow);
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+            visibility: hidden; /* Caché par défaut */
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible; /* Visible uniquement lorsque la classe show est présente */
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            margin-top: 5px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        .loading-indicator {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(74, 109, 167, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 15px;
+        }
+
+        .loading-spinner-sm {
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(74, 109, 167, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 10px auto;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #paginationStatus {
+            font-style: italic;
+            color: var(--text-muted);
+            margin-right: 10px;
+        }
+
+        /* Style pour la pagination avancée */
+        .pagination-advanced {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-info {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+        }
+
+        .pagination-controls select {
+            margin: 0 10px;
+            width: auto;
+            padding: 5px;
+        }
+
+        /* Apparence pendant le chargement des données */
+        #previewTableBody.loading td {
+            opacity: 0.5;
+        }
+
+        .shimmer {
+            position: relative;
+            overflow: hidden;
+            background: #f6f7f8;
+        }
+
+        .shimmer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            to { left: 150%; }
+        }
+
+        .table-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .table-overlay.active {
+            display: flex;
+        }
+
+        @media (max-width: 768px) {
+            .linked-table {
+                position: relative;  /* Essentiel pour le positionnement absolu du bouton */
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                align-items: center;
+                margin: 10px 0;
+                padding: 15px;
+                background-color: var(--secondary-color);
+                border-radius: 6px;
+            }
+
+            .linked-table .remove-btn {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 1;  /* S'assurer que le bouton est au-dessus des autres éléments */
+            }
+            
+            .linked-table select, .linked-table input {
+                width: 100%;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+
+            .columns-container {
+                flex-direction: column;
+            }
+
+            .columns-list, .columns-preview {
+                width: 100%;
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+
+            .columns-container.panel-hidden .columns-list {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Interface de Schéma de Base de Données</h1>
+        </header>
+
+        <!-- Section Source -->
+        <div class="section">
+            <h2 id="section-source">Source de Données</h2>
+            <div class="form-group">
+                <label for="dataSource">Source :</label>
+                <select id="dataSource">
+                    <option value="MGGD">MGGD</option>
+                    <option value="CSV">CSV</option>
+                    <option value="XML">XML</option>
+                    <option value="JSON">JSON</option>
+                    <option value="SQL">SQL</option>
+                    <option value="API">API REST</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="dbAddress">Adresse BD :</label>
+                <input type="text" id="dbAddress" placeholder="Entrez l'adresse de la base de données" aria-describedby="dbAddressError">
+                <div id="dbAddressError" class="error-message">Veuillez entrer une adresse valide</div>
+            </div>
+            <div class="form-group" id="credentials-container" style="display: none;">
+                <label for="username">Nom d'utilisateur :</label>
+                <input type="text" id="username" placeholder="Nom d'utilisateur">
+                
+                <label for="password">Mot de passe :</label>
+                <input type="password" id="password" placeholder="Mot de passe">
+            </div>
+            <div class="form-group">
+                <button id="testConnection" type="button">
+                    <span id="testConnectionText">Tester la connexion et charger les données</span>
+                    <span id="testConnectionLoading" style="display: none;">Connexion et chargement en cours...</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Section Table Principale -->
+        <div class="section">
+            <h2 id="section-main-table">Table Principale</h2>
+            <div class="form-group">
+                <label for="mainTableName">Nom de la table :</label>
+                <input type="text" id="mainTableName" placeholder="Nom de la table principale" aria-describedby="mainTableNameError">
+                <div id="mainTableNameError" class="error-message">Ce champ est obligatoire</div>
+            </div>
+            <div class="form-group">
+                <label for="mainTableAlias">Alias :</label>
+                <input type="text" id="mainTableAlias" placeholder="Alias de la table">
+            </div>
+            <div class="form-group">
+                <label for="mainTableSchema">Schéma :</label>
+                <input type="text" id="mainTableSchema" placeholder="Schéma (optionnel)">
+            </div>
+        </div>
+
+        <!-- Section Tables Liées -->
+        <div class="section">
+            <h2 id="section-linked-tables">Tables Liées</h2>
+            <div id="linkedTables"></div>
+            <button class="add-btn" id="addLinkedTableBtn">+ Ajouter une table liée</button>
+        </div>
+
+        <!-- Section Colonnes -->
+        <div class="section">
+            <h2 id="section-columns">Gestion des Colonnes</h2>
+            <button id="togglePanelBtn" class="toggle-panel-btn">
+                <span class="toggle-icon"></span>Cacher les colonnes
+            </button>
+            <div class="columns-container">
+                <!-- Partie de gauche: Liste des colonnes -->
+                <div class="columns-list">
+                    <h3>Colonnes disponibles</h3>
+                    <div id="columnsDefinition" aria-live="polite">
+                        <!-- Les colonnes seront ajoutées ici dynamiquement -->
+                    </div>
+                    <div id="columnsBottomArea">
+                        <button class="add-btn" id="addColumnBtn">+ Ajouter une colonne</button>
+                    </div>
+                </div>
+                
+                <!-- Partie de droite: Aperçu des données -->
+                <div class="columns-preview">
+                    <h3>Aperçu des données</h3>
+                    <div class="table-container" style="overflow-x: auto;">
+                        <div id="tableOverlay" class="table-overlay">
+                            <div class="loading-spinner-sm"></div>
+                            <span>Chargement des données...</span>
+                        </div>
+                        <table id="dataPreviewTable" aria-label="Tableau d'aperçu des données">
+                            <thead id="previewTableHead">
+                                <!-- Entêtes générées dynamiquement -->
+                            </thead>
+                            <tbody id="previewTableBody">
+                                <!-- Données générées dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-advanced">
+                        <div class="pagination-info">
+                            <span>Affichage de <span id="pageStart">1</span> à <span id="pageEnd">10</span> sur <span id="totalItems">30</span> entrées</span>
+                            <span id="paginationStatus"></span>
+                        </div>
+                        <div class="pagination-controls">
+                            <button id="prevPageBtn" aria-label="Page précédente" disabled>&laquo; Précédent</button>
+                            <span id="currentPage">Page 1 / 3</span>
+                            <select id="pageSizeSelector" aria-label="Nombre d'entrées par page">
+                                <option value="10">10 par page</option>
+                                <option value="25">25 par page</option>
+                                <option value="50">50 par page</option>
+                                <option value="100">100 par page</option>
+                            </select>
+                            <button id="nextPageBtn" aria-label="Page suivante">Suivant &raquo;</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button id="refreshDataBtn">Actualiser l'aperçu</button>
+                <button id="exportCSVBtn">Exporter en CSV</button>
+                <button id="generateSchemaBtn">Générer le schéma</button>
+            </div>
+        </div>
+
+        <!-- Section Résultat -->
+        <div class="section" id="resultSection" style="display: none;">
+            <h2 id="section-result">Schéma Généré</h2>
+            <pre id="schemaResult" style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto;"></pre>
+            <div class="btn-group">
+                <button id="copySchemaBtn">Copier dans le presse-papier</button>
+                <button id="downloadSchemaBtn">Télécharger</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            &copy; 2025 - Interface de Schéma de Base de Données
+        </div>
+    </div>
+
+    <!-- Toast de notification -->
+    <div id="toast" class="toast" role="alert" aria-live="assertive"></div>
+
+    <div id="mainLoadingIndicator" class="loading-indicator" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p id="loadingMessage">Chargement en cours...</p>
+    </div>
+
+    <script>
+        // Classe pour la gestion du schéma de base de données
+        class SchemaManager {
+            constructor() {
+                this.columns = [
+                    { id: 1, name: 'Colonne X', key: 'col_x' },
+                    { id: 2, name: 'Date', key: 'date_ajout' },
+                    { id: 3, name: 'Prix', key: 'price' },
+                    { id: 4, name: 'Colonne O', key: 'col_o' }
+                ];
+                this.fakeData = [];
+                this.itemsPerPage = 10;
+                this.currentPageIndex = 0;
+                this.totalPages = 0;
+                
+                this.init();
+            }
+    
+            init() {
+                // Initialisation de la page
+                this.addLinkedTable();
+                this.refreshColumnDefinitions();
+                this.updatePreviewTable();
+                this.generateFakeData();
+                this.setupEventListeners();
+
+                // Appliquer l'état initial du panneau basé sur localStorage
+                const isPanelHidden = localStorage.getItem('columnsPanelHidden') === 'true';
+                const container = document.querySelector('.columns-container');
+                const toggleBtn = document.getElementById('togglePanelBtn');
+                
+                if (isPanelHidden) {
+                    container.classList.add('panel-hidden');
+                    toggleBtn.innerHTML = '<span class="toggle-icon"></span>Afficher les colonnes';
+                } else {
+                    toggleBtn.innerHTML = '<span class="toggle-icon"></span>Cacher les colonnes';
+                }
+
+                // Initialiser la synchronisation du défilement
+                this.initScrollSync();
+            }
+
+            initScrollSync() {
+                // Obtenir les références aux éléments défilables
+                const columnsList = document.querySelector('.columns-list');
+                const tableContainer = document.querySelector('.table-container');
+                
+                if (!columnsList || !tableContainer) return;
+                
+                // Synchroniser la hauteur maximale de la liste des colonnes avec celle du tableau
+                const updateColumnListHeight = () => {
+                    const tableHeight = tableContainer.offsetHeight;
+                    // Définir la hauteur maximale de la liste des colonnes pour qu'elle corresponde à celle du tableau
+                    columnsList.style.maxHeight = `${tableHeight}px`;
+                };
+                
+                // Appeler la fonction au chargement et lors du redimensionnement de la fenêtre
+                updateColumnListHeight();
+                window.addEventListener('resize', updateColumnListHeight);
+                
+                // Option avancée: synchroniser le défilement entre la liste et le tableau
+                // Cette partie est optionnelle et peut être activée si vous souhaitez synchroniser le défilement
+                tableContainer.addEventListener('scroll', () => {
+                    // Calculer le ratio de défilement
+                    const scrollRatio = tableContainer.scrollTop / (tableContainer.scrollHeight - tableContainer.clientHeight);
+                    
+                    // Appliquer ce ratio à la liste des colonnes
+                    if (!isNaN(scrollRatio) && isFinite(scrollRatio)) {
+                        columnsList.scrollTop = scrollRatio * (columnsList.scrollHeight - columnsList.clientHeight);
+                    }
+                });
+            }
+    
+            setupEventListeners() {
+                // Source de données
+                document.getElementById('dataSource').addEventListener('change', this.handleDataSourceChange.bind(this));
+                document.getElementById('pageSizeSelector').addEventListener('change', (e) => {
+                    this.changePageSize(parseInt(e.target.value, 10));
+                });
+                document.getElementById('testConnection').addEventListener('click', this.testConnection.bind(this));
+                
+                // Boutons d'action
+                document.getElementById('addLinkedTableBtn').addEventListener('click', this.addLinkedTable.bind(this));
+                document.getElementById('addColumnBtn').addEventListener('click', this.addColumnDefinition.bind(this));
+                document.getElementById('refreshDataBtn').addEventListener('click', this.refreshDataPreview.bind(this));
+                document.getElementById('generateSchemaBtn').addEventListener('click', this.generateSchema.bind(this));
+                document.getElementById('copySchemaBtn').addEventListener('click', this.copyToClipboard.bind(this));
+                document.getElementById('downloadSchemaBtn').addEventListener('click', this.downloadSchema.bind(this));
+                document.getElementById('exportCSVBtn').addEventListener('click', this.exportToCSV.bind(this));
+                document.getElementById('togglePanelBtn').addEventListener('click', () => this.toggleColumnsPanel());
+                
+                // Pagination
+                document.getElementById('prevPageBtn').addEventListener('click', () => this.changePage('prev'));
+                document.getElementById('nextPageBtn').addEventListener('click', () => this.changePage('next'));
+                
+                // Validation
+                document.getElementById('mainTableName').addEventListener('input', this.validateMainTableName.bind(this));
+                document.getElementById('dbAddress').addEventListener('input', this.validateDbAddress.bind(this));
+            }
+    
+            validateMainTableName() {
+                const mainTableName = document.getElementById('mainTableName');
+                const errorEl = document.getElementById('mainTableNameError');
+                
+                if (!mainTableName.value.trim()) {
+                    errorEl.style.display = 'block';
+                    mainTableName.setAttribute('aria-invalid', 'true');
+                    return false;
+                } else {
+                    errorEl.style.display = 'none';
+                    mainTableName.setAttribute('aria-invalid', 'false');
+                    return true;
+                }
+            }
+    
+            validateDbAddress() {
+                const dbAddress = document.getElementById('dbAddress');
+                const errorEl = document.getElementById('dbAddressError');
+                
+                if (!dbAddress.value.trim()) {
+                    errorEl.style.display = 'block';
+                    dbAddress.setAttribute('aria-invalid', 'true');
+                    return false;
+                } else {
+                    errorEl.style.display = 'none';
+                    dbAddress.setAttribute('aria-invalid', 'false');
+                    return true;
+                }
+            }
+    
+            handleDataSourceChange(e) {
+                const credentialsContainer = document.getElementById('credentials-container');
+                const needsCredentials = ['MGGD', 'SQL', 'API'].includes(e.target.value);
+                credentialsContainer.style.display = needsCredentials ? 'block' : 'none';
+            }
+
+            // Méthode pour changer le nombre d'éléments par page
+            async changePageSize(newSize) {
+                if (newSize !== this.itemsPerPage) {
+                    // Sauvegarder l'ancienne taille et mettre à jour
+                    const oldSize = this.itemsPerPage;
+                    this.itemsPerPage = newSize;
+                    
+                    // Calculer la nouvelle page pour garder à peu près les mêmes données visibles
+                    const firstItemIndex = this.currentPageIndex * oldSize;
+                    const newPageIndex = Math.floor(firstItemIndex / newSize);
+                    
+                    // Afficher un message de statut
+                    this.showToast(`Affichage modifié à ${newSize} éléments par page`, 'info');
+                    
+                    // Recharger les données pour la nouvelle page
+                    await this.loadDataPage(newPageIndex);
+                }
+            }
+
+            // Méthode pour gérer une recherche ou un filtrage
+            async searchData(query) {
+                if (!query || query.trim() === '') {
+                    // Si la recherche est vide, revenir aux données non filtrées
+                    this.filteredMode = false;
+                    await this.loadDataPage(0);
+                    return;
+                }
+                
+                // Indiquer qu'une recherche est en cours
+                this.showToast('Recherche en cours...', 'info');
+                this.showTableLoadingIndicator(true);
+                
+                try {
+                    // Simuler une recherche asynchrone sur le serveur
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    
+                    // Dans une vraie application, cela serait envoyé au serveur
+                    // Ici, nous simulons un filtrage local
+                    this.filteredMode = true;
+                    this.filteredQuery = query.toLowerCase();
+                    
+                    // Mettre à jour la pagination pour les résultats filtrés
+                    // Nous simulons ici un nombre réduit de résultats
+                    this.totalRecords = Math.floor(this.totalRecords * 0.2);
+                    this.totalPages = Math.ceil(this.totalRecords / this.itemsPerPage);
+                    this.currentPageIndex = 0;
+                    
+                    // Charger la première page de résultats filtrés
+                    await this.loadDataPage(0);
+                    
+                    // Afficher un message indiquant le nombre de résultats
+                    this.showToast(`${this.totalRecords} résultats trouvés pour "${query}"`, 'success');
+                } catch (error) {
+                    console.error('Erreur lors de la recherche:', error);
+                    this.showToast('Erreur lors de la recherche: ' + error.message, 'error');
+                }
+            }
+
+            // Méthode pour réinitialiser la recherche
+            async clearSearch() {
+                if (this.filteredMode) {
+                    this.filteredMode = false;
+                    this.filteredQuery = '';
+                    
+                    // Simuler un rechargement des données non filtrées
+                    this.totalRecords = this.originalTotalRecords || 10000;
+                    this.totalPages = Math.ceil(this.totalRecords / this.itemsPerPage);
+                    
+                    // Recharger la première page
+                    await this.loadDataPage(0);
+                    this.showToast('Filtres réinitialisés', 'info');
+                }
+            }
+
+            // Méthode pour simuler le chargement d'une structure de base de données
+            async loadDatabaseStructure(source, address) {
+                try {
+                    this.showToast('Chargement de la structure de la base de données...', 'info');
+                    
+                    // Simuler un délai de chargement
+                    await new Promise(resolve => setTimeout(resolve, 1200));
+                    
+                    // Simuler une structure de base de données
+                    const tables = [
+                        { name: 'clients', columns: ['id', 'nom', 'prenom', 'email', 'date_inscription'] },
+                        { name: 'commandes', columns: ['id', 'client_id', 'date_commande', 'montant', 'statut'] },
+                        { name: 'produits', columns: ['id', 'nom', 'description', 'prix', 'stock'] },
+                        { name: 'commande_details', columns: ['id', 'commande_id', 'produit_id', 'quantite', 'prix_unitaire'] }
+                    ];
+                    
+                    // Populer les options du sélecteur de tables principales
+                    const mainTableInput = document.getElementById('mainTableName');
+                    if (mainTableInput && mainTableInput.tagName === 'INPUT') {
+                        // Convertir l'input en select ou créer un datalist
+                        const tableList = document.createElement('datalist');
+                        tableList.id = 'tablesList';
+                        
+                        tables.forEach(table => {
+                            const option = document.createElement('option');
+                            option.value = table.name;
+                            tableList.appendChild(option);
+                        });
+                        
+                        document.body.appendChild(tableList);
+                        mainTableInput.setAttribute('list', 'tablesList');
+                    }
+                    
+                    // Stocker la structure pour une utilisation ultérieure
+                    this.databaseStructure = tables;
+                    
+                    this.showToast(`Structure de la base de données chargée (${tables.length} tables)`, 'success');
+                    return tables;
+                } catch (error) {
+                    console.error('Erreur lors du chargement de la structure:', error);
+                    this.showToast('Erreur lors du chargement de la structure: ' + error.message, 'error');
+                    return [];
+                }
+            }
+
+            // Méthode utilitaire pour ajouter un temps d'attente
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            // Méthode pour exporter les données actuelles en CSV avec gestion de grandes quantités
+            async exportToCSVAsync() {
+                try {
+                    if (!this.dataSource || !this.columns.length) {
+                        this.showToast('Aucune donnée à exporter', 'error');
+                        return;
+                    }
+                    
+                    // Afficher l'indicateur de chargement
+                    this.showLoadingIndicator(true, 'Préparation de l\'export CSV...');
+                    
+                    // Simuler un traitement asynchrone pour les grandes quantités de données
+                    await this.sleep(1500);
+                    
+                    // Pour un export complet avec pagination, on simulerait ici le chargement 
+                    // de toutes les pages de données du serveur, ou on ferait une requête spéciale
+                    // pour l'export complet
+                    
+                    // Créer l'en-tête CSV avec les noms des colonnes
+                    let csvContent = this.columns.map(col => `"${col.name.replace(/"/g, '""')}"`).join(',') + '\n';
+                    
+                    // Dans un cas réel, nous pourrions itérer sur toutes les pages
+                    // Pour la démo, nous utilisons juste les données actuelles
+                    this.fakeData.forEach(row => {
+                        const csvRow = this.columns.map(col => {
+                            const value = row[col.key] !== undefined ? row[col.key].toString() : '';
+                            return `"${value.replace(/"/g, '""')}"`;
+                        }).join(',');
+                        csvContent += csvRow + '\n';
+                    });
+                    
+                    // Simuler un export partiel pour la démo
+                    this.showToast(`Export CSV généré (${this.fakeData.length} lignes sur ${this.totalRecords} au total)`, 'info');
+                    
+                    // Créer un objet Blob pour le contenu CSV
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Créer un lien de téléchargement
+                    const link = document.createElement('a');
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', 'export_partiel_' + new Date().toISOString().split('T')[0] + '.csv');
+                    link.style.display = 'none';
+                    
+                    // Ajouter au document et déclencher le téléchargement
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    // Nettoyer
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                        this.showLoadingIndicator(false);
+                    }, 100);
+                    
+                } catch (error) {
+                    console.error('Erreur lors de l\'export CSV:', error);
+                    this.showToast('Erreur lors de l\'export: ' + error.message, 'error');
+                    this.showLoadingIndicator(false);
+                }
+            }
+    
+            async testConnection() {
+                if (!this.validateDbAddress()) {
+                    this.showToast('Veuillez entrer une adresse de base de données valide', 'error');
+                    return;
+                }
+                
+                const source = document.getElementById('dataSource').value;
+                const address = document.getElementById('dbAddress').value;
+                const testBtn = document.getElementById('testConnection');
+                const testText = document.getElementById('testConnectionText');
+                const testLoading = document.getElementById('testConnectionLoading');
+                
+                // Afficher l'état de chargement
+                testBtn.disabled = true;
+                testText.style.display = 'none';
+                testLoading.style.display = 'inline';
+                
+                // Récupérer les identifiants si nécessaire
+                let credentials = null;
+                if (['MGGD', 'SQL', 'API'].includes(source)) {
+                    credentials = {
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value
+                    };
+                }
+                
+                try {
+                    // Appeler la méthode de chargement asynchrone
+                    const result = await this.loadDataAsync(source, address, credentials);
+                    
+                    if (result.success) {
+                        this.showToast(`Connexion à ${source} réussie! ${result.totalRecords} enregistrements trouvés.`, 'success');
+                        this.refreshColumnDefinitions();
+                        this.updatePreviewTable();
+                    } else {
+                        this.showToast(`Échec de la connexion à ${source}: ${result.error}`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Erreur de connexion:', error);
+                    this.showToast(`Erreur de connexion: ${error.message}`, 'error');
+                } finally {
+                    // Rétablir l'état normal du bouton
+                    testBtn.disabled = false;
+                    testText.style.display = 'inline';
+                    testLoading.style.display = 'none';
+                }
+            }
+
+            toggleColumnsPanel() {
+                const container = document.querySelector('.columns-container');
+                const isPanelHidden = container.classList.contains('panel-hidden');
+                const toggleBtn = document.getElementById('togglePanelBtn');
+
+                console.log('Basculement du panneau, état actuel:', isPanelHidden ? 'caché' : 'visible');
+                
+                if (isPanelHidden) {
+                    // Afficher le panneau
+                    container.classList.remove('panel-hidden');
+                    toggleBtn.innerHTML = '<span class="toggle-icon"></span>Cacher les colonnes';
+                    // Sauvegarder l'état dans localStorage
+                    localStorage.setItem('columnsPanelHidden', 'false');
+                } else {
+                    // Cacher le panneau
+                    container.classList.add('panel-hidden');
+                    toggleBtn.innerHTML = '<span class="toggle-icon"></span>Afficher les colonnes';
+                    // Sauvegarder l'état dans localStorage
+                    localStorage.setItem('columnsPanelHidden', 'true');
+                }
+            }
+
+            initTogglePanel() {
+                // Vérifier si l'état est sauvegardé dans localStorage
+                const isPanelHidden = localStorage.getItem('columnsPanelHidden') === 'true';
+                const container = document.querySelector('.columns-container');
+                const toggleBtn = document.getElementById('togglePanelBtn');
+                
+                if (isPanelHidden) {
+                    container.classList.add('panel-hidden');
+                    toggleBtn.innerHTML = '<span class="toggle-icon"></span>Afficher les colonnes';
+                } else {
+                    toggleBtn.innerHTML = '<span class="toggle-icon"></span>Cacher les colonnes';
+                }
+                
+                // Ajouter l'écouteur d'événement pour le bouton
+                toggleBtn.addEventListener('click', this.toggleColumnsPanel.bind(this));
+            }
+    
+            addLinkedTable() {
+                const container = document.getElementById('linkedTables');
+                const div = document.createElement('div');
+                div.className = 'linked-table';
+                
+                // Générer un ID unique pour chaque élément
+                const uniqueId = 'linked_' + Date.now();
+                
+                div.innerHTML = `
+                    <select id="${uniqueId}_joinType" aria-label="Type de jointure">
+                        <option value="INNER">INNER JOIN</option>
+                        <option value="LEFT">LEFT JOIN</option>
+                        <option value="RIGHT">RIGHT JOIN</option>
+                        <option value="FULL">FULL JOIN</option>
+                    </select>
+                    <input type="text" id="${uniqueId}_tableName" placeholder="Nom de la table" aria-label="Nom de la table liée">
+                    <input type="text" id="${uniqueId}_tableType" placeholder="Type" aria-label="Type de la table">
+                    <input type="text" id="${uniqueId}_tableAlias" placeholder="Alias" aria-label="Alias de la table">
+                    <input type="text" id="${uniqueId}_sourceCol" placeholder="Colonne source" aria-label="Colonne source">
+                    <input type="text" id="${uniqueId}_destCol" placeholder="Colonne destination" aria-label="Colonne destination">
+                    <button class="remove-btn" onclick="schemaManager.removeElement(this.parentElement)" aria-label="Supprimer cette table liée">×</button>
+                `;
+                
+                container.appendChild(div);
+                
+                // Focus sur le premier élément pour une meilleure UX
+                setTimeout(() => {
+                    div.querySelector('select').focus();
+                }, 0);
+            }
+    
+            removeElement(element) {
+                element.remove();
+                // Notification optionnelle
+                this.showToast('Élément supprimé', 'info');
+            }
+    
+            addColumnDefinition() {
+                const container = document.getElementById('columnsDefinition');
+                const columnId = this.columns.length > 0 ? Math.max(...this.columns.map(col => col.id)) + 1 : 1;
+                const columnKey = 'col_' + columnId;
+                
+                const columnDiv = document.createElement('div');
+                columnDiv.className = 'column-definition';
+                columnDiv.dataset.id = columnId;
+                columnDiv.dataset.key = columnKey;
+                
+                const uniqueDetailsId = 'colDetails_' + columnId;
+                
+                columnDiv.innerHTML = `
+                    <div class="column-header" onclick="schemaManager.toggleColumnDetails(this)" 
+                        aria-expanded="false" aria-controls="${uniqueDetailsId}">
+                        <input type="text" placeholder="Nom de la colonne" value="Nouvelle Colonne" 
+                            style="flex: 1; margin-right: 10px;" 
+                            oninput="schemaManager.updateColumnName(${columnId}, this.value)"
+                            aria-label="Nom de la colonne">
+                        <button class="btn-icon move-up" onclick="schemaManager.moveColumn(${columnId}, 'up')" 
+                                style="background-color: #6c757d; margin-right: 5px;"
+                                aria-label="Déplacer vers le haut">↑</button>
+                        <button class="btn-icon move-down" onclick="schemaManager.moveColumn(${columnId}, 'down')" 
+                                style="background-color: #6c757d; margin-right: 5px;"
+                                aria-label="Déplacer vers le bas">↓</button>
+                        <button class="btn-icon remove-bt-n" onclick="schemaManager.removeColumn(${columnId})"
+                                aria-label="Supprimer cette colonne">×</button>
+                    </div>
+                    <div id="${uniqueDetailsId}" class="column-details" style="display: none;">
+                        <label for="columnAlias_${columnId}">Alias de la table :</label>
+                        <input type="text" id="columnAlias_${columnId}" placeholder="Alias de la table">
+                        
+                        <label for="columnFormula_${columnId}">Formule :</label>
+                        <textarea id="columnFormula_${columnId}" placeholder="Entrez une formule ou une expression SQL"></textarea>
+                    </div>
+                `;
+                
+                container.appendChild(columnDiv);
+
+                const columnsContainer = document.querySelector('.columns-list');
+                if (columnsContainer) {
+                    // Attendre que le DOM soit mis à jour
+                    setTimeout(() => {
+                        columnsContainer.scrollTop = columnsContainer.scrollHeight;
+                    }, 10);
+                }
+                
+                // Ajouter à notre array de colonnes
+                this.columns.push({
+                    id: columnId,
+                    name: 'Nouvelle Colonne',
+                    key: columnKey
+                });
+                
+                // Mettre à jour l'aperçu des données
+                this.updatePreviewTable();
+                this.generateFakeData();
+                
+                // Focus sur le champ de nom pour une meilleure UX
+                setTimeout(() => {
+                    columnDiv.querySelector('input').focus();
+                }, 0);
+                
+                this.showToast('Nouvelle colonne ajoutée', 'success');
+            }
+    
+            updateColumnName(columnId, newName) {
+                const columnIndex = this.columns.findIndex(col => col.id === columnId);
+                if (columnIndex !== -1) {
+                    this.columns[columnIndex].name = newName;
+                    this.updatePreviewTable();
+                }
+            }
+    
+            moveColumn(columnId, direction) {
+                const columnIndex = this.columns.findIndex(col => col.id === columnId);
+                if (columnIndex === -1) return;
+                
+                if (direction === 'up' && columnIndex > 0) {
+                    // Échanger avec la colonne précédente
+                    [this.columns[columnIndex], this.columns[columnIndex - 1]] = 
+                    [this.columns[columnIndex - 1], this.columns[columnIndex]];
+                } else if (direction === 'down' && columnIndex < this.columns.length - 1) {
+                    // Échanger avec la colonne suivante
+                    [this.columns[columnIndex], this.columns[columnIndex + 1]] = 
+                    [this.columns[columnIndex + 1], this.columns[columnIndex]];
+                }
+                
+                // Rafraîchir l'affichage des colonnes et l'aperçu
+                this.refreshColumnDefinitions();
+                this.updatePreviewTable();
+            }
+    
+            removeColumn(columnId) {
+                const columnIndex = this.columns.findIndex(col => col.id === columnId);
+                if (columnIndex !== -1) {
+                    this.columns.splice(columnIndex, 1);
+                    
+                    // Rafraîchir l'affichage
+                    this.refreshColumnDefinitions();
+                    this.updatePreviewTable();
+                    this.generateFakeData();
+                    
+                    this.showToast('Colonne supprimée', 'info');
+                }
+            }
+    
+            toggleColumnDetails(header) {
+                const details = header.nextElementSibling;
+                const isExpanded = header.getAttribute('aria-expanded') === 'true';
+                
+                // Mettre à jour l'état
+                header.setAttribute('aria-expanded', !isExpanded);
+                details.style.display = isExpanded ? 'none' : 'block';
+            }
+    
+            refreshColumnDefinitions() {
+                const container = document.getElementById('columnsDefinition');
+                container.innerHTML = '';
+                
+                this.columns.forEach(column => {
+                    const columnDiv = document.createElement('div');
+                    columnDiv.className = 'column-definition';
+                    columnDiv.dataset.id = column.id;
+                    columnDiv.dataset.key = column.key;
+                    
+                    const uniqueDetailsId = 'colDetails_' + column.id;
+                    
+                    columnDiv.innerHTML = `
+                        <div class="column-header" onclick="schemaManager.toggleColumnDetails(this)"
+                            aria-expanded="false" aria-controls="${uniqueDetailsId}">
+                            <input type="text" placeholder="Nom de la colonne" value="${column.name}" 
+                                style="flex: 1; margin-right: 10px;" 
+                                oninput="schemaManager.updateColumnName(${column.id}, this.value)"
+                                aria-label="Nom de la colonne">
+                            <button class="btn-icon move-up" onclick="schemaManager.moveColumn(${column.id}, 'up')" 
+                                    style="background-color: #6c757d; margin-right: 5px;"
+                                    aria-label="Déplacer vers le haut">↑</button>
+                            <button class="btn-icon move-down" onclick="schemaManager.moveColumn(${column.id}, 'down')" 
+                                    style="background-color: #6c757d; margin-right: 5px;"
+                                    aria-label="Déplacer vers le bas">↓</button>
+                            <button class="remove-btn" onclick="schemaManager.removeColumn(${column.id})"
+                                    aria-label="Supprimer cette colonne">×</button>
+                        </div>
+                        <div id="${uniqueDetailsId}" class="column-details" style="display: none;">
+                            <label for="columnAlias_${column.id}">Alias de la table :</label>
+                            <input type="text" id="columnAlias_${column.id}" placeholder="Alias de la table">
+                            
+                            <label for="columnFormula_${column.id}">Formule :</label>
+                            <textarea id="columnFormula_${column.id}" placeholder="Entrez une formule ou une expression SQL"></textarea>
+                        </div>
+                    `;
+                    
+                    container.appendChild(columnDiv);
+                });
+            }
+    
+            // Mettre à jour l'aperçu du tableau
+            updatePreviewTable() {
+                const headerRow = document.getElementById('previewTableHead');
+                headerRow.innerHTML = '';
+                
+                // Créer la ligne d'en-tête
+                const tr = document.createElement('tr');
+                this.columns.forEach(column => {
+                    const th = document.createElement('th');
+                    th.textContent = column.name;
+                    th.setAttribute('scope', 'col'); // Accessibilité
+                    tr.appendChild(th);
+                });
+                
+                headerRow.appendChild(tr);
+                
+                // Mettre à jour les données si nécessaire
+                if (this.fakeData.length === 0 || Object.keys(this.fakeData[0]).length !== this.columns.length) {
+                    this.generateFakeData();
+                } else {
+                    this.renderPageData();
+                }
+            }
+
+            // Méthode pour charger les données de manière asynchrone
+            async loadDataAsync(source, address, credentials = null) {
+                try {
+                    // Afficher l'indicateur de chargement
+                    this.showLoadingIndicator(true, 'Chargement des données...');
+                    
+                    // Configuration de la requête
+                    const requestOptions = {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            source: source,
+                            address: address,
+                            credentials: credentials
+                        })
+                    };
+                    
+                    // Simuler une requête API avec délai aléatoire
+                    // Dans une vraie application, remplacez ceci par un vrai appel API
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            // Simuler la récupération des métadonnées (colonnes disponibles)
+                            const columns = this.generateMockColumns();
+                            
+                            // Indiquer le nombre total d'enregistrements disponibles
+                            const totalRecords = 10000; // Simuler une grosse base de données
+                            
+                            // Mettre à jour l'état de l'application
+                            this.columns = columns;
+                            this.totalRecords = totalRecords;
+                            this.dataSource = {
+                                type: source,
+                                address: address,
+                                totalRecords: totalRecords
+                            };
+                            
+                            // Générer la première page de données
+                            this.currentPageIndex = 0;
+                            this.loadDataPage(0);
+                            
+                            // Masquer l'indicateur de chargement
+                            this.showLoadingIndicator(false);
+                            
+                            // Résoudre la promesse
+                            resolve({
+                                success: true,
+                                columns: columns,
+                                totalRecords: totalRecords
+                            });
+                        }, 1500 + Math.random() * 1500); // Délai de 1.5-3s pour simuler le chargement
+                    });
+                } catch (error) {
+                    // Gérer les erreurs
+                    console.error('Erreur lors du chargement des données:', error);
+                    this.showLoadingIndicator(false);
+                    this.showToast('Erreur lors du chargement des données: ' + error.message, 'error');
+                    return { success: false, error: error.message };
+                }
+            }
+
+            // Charger une page spécifique de données
+            async loadDataPage(pageIndex) {
+                try {
+                    if (!this.dataSource) {
+                        this.showToast('Aucune source de données connectée', 'error');
+                        return;
+                    }
+                    
+                    // Indiquer le chargement de la page
+                    const paginationStatus = document.getElementById('paginationStatus');
+                    if (paginationStatus) {
+                        paginationStatus.textContent = 'Chargement des données...';
+                    }
+                    
+                    // Désactiver les boutons de pagination pendant le chargement
+                    const prevBtn = document.getElementById('prevPageBtn');
+                    const nextBtn = document.getElementById('nextPageBtn');
+                    if (prevBtn) prevBtn.disabled = true;
+                    if (nextBtn) nextBtn.disabled = true;
+                    
+                    // Ajouter un indicateur de chargement au tableau
+                    this.showTableLoadingIndicator(true);
+                    
+                    // Simuler un chargement asynchrone
+                    // Dans une vraie application, remplacez ceci par un vrai appel API de pagination
+                    return new Promise((resolve) => {
+                        setTimeout(() => {
+                            // Calculer les index de début et de fin pour cette page
+                            const start = pageIndex * this.itemsPerPage;
+                            const end = Math.min(start + this.itemsPerPage, this.totalRecords);
+                            
+                            // Simuler le chargement d'une page de données
+                            this.fakeData = [];
+                            for (let i = start; i < end; i++) {
+                                const row = {};
+                                this.columns.forEach(column => {
+                                    // Créer des données fictives basées sur le type de colonne
+                                    if (column.key.includes('date')) {
+                                        row[column.key] = this.randomDate();
+                                    } else if (column.key.includes('prix') || column.key.includes('montant') || column.key.includes('price')) {
+                                        row[column.key] = this.randomPrice();
+                                    } else if (column.key.includes('id') || column.key.includes('num')) {
+                                        row[column.key] = i + 1000;
+                                    } else if (column.key.includes('email')) {
+                                        row[column.key] = `utilisateur${i+1}@exemple.com`;
+                                    } else if (column.key.includes('nom')) {
+                                        row[column.key] = `Nom ${i+1}`;
+                                    } else if (column.key.includes('prenom')) {
+                                        row[column.key] = `Prénom ${i+1}`;
+                                    } else {
+                                        row[column.key] = `Donnée ${i+1} pour ${column.name}`;
+                                    }
+                                });
+                                this.fakeData.push(row);
+                            }
+                            
+                            // Mettre à jour la pagination
+                            this.currentPageIndex = pageIndex;
+                            this.totalPages = Math.ceil(this.totalRecords / this.itemsPerPage);
+                            this.updatePaginationInfo();
+                            this.renderPageData();
+                            
+                            // Réactiver les boutons de pagination
+                            this.showTableLoadingIndicator(false);
+                            
+                            // Résoudre la promesse
+                            resolve({
+                                success: true,
+                                page: pageIndex,
+                                recordsInPage: this.fakeData.length
+                            });
+                        }, 500 + Math.random() * 500); // Délai de 0.5-1s pour simuler le chargement de page
+                    });
+                } catch (error) {
+                    console.error('Erreur lors du chargement de la page:', error);
+                    this.showTableLoadingIndicator(false);
+                    this.showToast('Erreur lors du chargement de la page: ' + error.message, 'error');
+                    return { success: false, error: error.message };
+                }
+            }
+
+            // Générer des colonnes fictives pour la simulation
+            generateMockColumns() {
+                // Dans une vraie application, ces infos viendraient du backend
+                return [
+                    { id: 1, name: 'ID', key: 'id', type: 'number' },
+                    { id: 2, name: 'Date', key: 'date_creation', type: 'date' },
+                    { id: 3, name: 'Nom Client', key: 'nom_client', type: 'string' },
+                    { id: 4, name: 'Email', key: 'email', type: 'string' },
+                    { id: 5, name: 'Montant', key: 'price', type: 'currency' },
+                    { id: 6, name: 'Statut', key: 'status', type: 'string' }
+                ];
+            }
+
+            // Afficher ou masquer l'indicateur de chargement principal
+            showLoadingIndicator(show, message = 'Chargement en cours...') {
+                const loadingIndicator = document.getElementById('mainLoadingIndicator');
+                
+                if (!loadingIndicator) {
+                    // Créer l'indicateur s'il n'existe pas
+                    const indicator = document.createElement('div');
+                    indicator.id = 'mainLoadingIndicator';
+                    indicator.className = 'loading-indicator';
+                    indicator.innerHTML = `
+                        <div class="loading-spinner"></div>
+                        <p id="loadingMessage">${message}</p>
+                    `;
+                    document.body.appendChild(indicator);
+                }
+                
+                const indicator = document.getElementById('mainLoadingIndicator');
+                const loadingMessage = document.getElementById('loadingMessage');
+                
+                if (show) {
+                    indicator.style.display = 'flex';
+                    if (loadingMessage) {
+                        loadingMessage.textContent = message;
+                    }
+                } else {
+                    indicator.style.display = 'none';
+                }
+            }
+
+            // Afficher ou masquer l'indicateur de chargement du tableau
+            showTableLoadingIndicator(show) {
+                const tableBody = document.getElementById('previewTableBody');
+                
+                if (show) {
+                    // Ajouter un message de chargement au tableau
+                    const loadingRow = document.createElement('tr');
+                    loadingRow.id = 'tableLoadingRow';
+                    loadingRow.innerHTML = `
+                        <td colspan="${this.columns.length}" style="text-align: center; padding: 20px;">
+                            <div class="loading-spinner-sm"></div>
+                            <p>Chargement des données...</p>
+                        </td>
+                    `;
+                    tableBody.innerHTML = '';
+                    tableBody.appendChild(loadingRow);
+                } else {
+                    // Le contenu sera remplacé par renderPageData()
+                    const loadingRow = document.getElementById('tableLoadingRow');
+                    if (loadingRow) {
+                        loadingRow.remove();
+                    }
+                }
+            }
+    
+            // Générer des données fictives
+            generateFakeData() {
+                this.fakeData = [];
+                // Générer 25 lignes de données
+                for (let i = 0; i < 25; i++) {
+                    const row = {};
+                    this.columns.forEach(column => {
+                        // Créer des données fictives basées sur le type de colonne
+                        if (column.key.includes('date')) {
+                            row[column.key] = this.randomDate();
+                        } else if (column.key.includes('prix') || column.key.includes('montant') || column.key.includes('price')) {
+                            row[column.key] = this.randomPrice();
+                        } else if (column.key.includes('id') || column.key.includes('num')) {
+                            row[column.key] = i + 1000;
+                        } else if (column.key.includes('email')) {
+                            row[column.key] = `utilisateur${i+1}@exemple.com`;
+                        } else if (column.key.includes('nom')) {
+                            row[column.key] = `Nom ${i+1}`;
+                        } else if (column.key.includes('prenom')) {
+                            row[column.key] = `Prénom ${i+1}`;
+                        } else {
+                            row[column.key] = `Donnée ${i+1} pour ${column.name}`;
+                        }
+                    });
+                    this.fakeData.push(row);
+                }
+                
+                // Mettre à jour la pagination
+                this.totalPages = Math.ceil(this.fakeData.length / this.itemsPerPage);
+                this.currentPageIndex = 0;
+                this.updatePaginationInfo();
+                this.renderPageData();
+            }
+    
+            // Afficher les données de la page courante
+            renderPageData() {
+                const tableBody = document.getElementById('previewTableBody');
+                tableBody.innerHTML = '';
+                
+                const start = this.currentPageIndex * this.itemsPerPage;
+                const end = Math.min(start + this.itemsPerPage, this.fakeData.length);
+                
+                for (let i = start; i < end; i++) {
+                    const row = this.fakeData[i];
+                    const tr = document.createElement('tr');
+                    
+                    this.columns.forEach(column => {
+                        const td = document.createElement('td');
+                        td.textContent = row[column.key] || '';
+                        tr.appendChild(td);
+                    });
+                    
+                    tableBody.appendChild(tr);
+                }
+            }
+    
+            // Mettre à jour les informations de pagination
+            updatePaginationInfo() {
+                const start = this.currentPageIndex * this.itemsPerPage + 1;
+                const end = Math.min((this.currentPageIndex + 1) * this.itemsPerPage, this.fakeData.length);
+                
+                document.getElementById('pageStart').textContent = start;
+                document.getElementById('pageEnd').textContent = end;
+                document.getElementById('totalItems').textContent = this.fakeData.length;
+                document.getElementById('currentPage').textContent = `Page ${this.currentPageIndex + 1} / ${this.totalPages}`;
+                
+                // Activer/désactiver les boutons de pagination
+                document.getElementById('prevPageBtn').disabled = this.currentPageIndex === 0;
+                document.getElementById('nextPageBtn').disabled = this.currentPageIndex >= this.totalPages - 1;
+            }
+    
+            // Changer de page
+            async changePage(direction) {
+                // Sauvegardons l'index de page précédent pour le débogage
+                const previousIndex = this.currentPageIndex;
+                let newPageIndex = previousIndex;
+                
+                if (direction === 'prev' && this.currentPageIndex > 0) {
+                    newPageIndex = previousIndex - 1;
+                } else if (direction === 'next' && this.currentPageIndex < this.totalPages - 1) {
+                    newPageIndex = previousIndex + 1;
+                } else {
+                    return;
+                }
+                
+                console.log(`Pagination: ${direction}, changement de page ${previousIndex + 1} à ${this.currentPageIndex + 1}`);
+                
+                // Charger les nouvelles données pour cette page
+                await this.loadDataPage(newPageIndex);
+            }
+            
+            // Actualiser l'aperçu des données
+            refreshDataPreview() {
+                this.generateFakeData();
+                this.showToast('Données actualisées', 'success');
+            }
+    
+            // Afficher un toast de notification
+            showToast(message, type = 'success') {
+                const toast = document.getElementById('toast');
+                
+                // Définir l'apparence en fonction du type
+                if (type === 'error') {
+                    toast.style.backgroundColor = 'var(--danger-color)';
+                } else if (type === 'info') {
+                    toast.style.backgroundColor = 'var(--primary-color)';
+                } else {
+                    toast.style.backgroundColor = 'var(--success-color)';
+                }
+                
+                toast.textContent = message;
+                toast.classList.add('show');
+                
+                // Masquer après 3 secondes
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+    
+            // Générer le schéma
+            generateSchema() {
+                // Récupération des données
+                const dataSource = document.getElementById('dataSource').value;
+                const dbAddress = document.getElementById('dbAddress').value;
+                const mainTable = {
+                    name: document.getElementById('mainTableName').value,
+                    alias: document.getElementById('mainTableAlias').value,
+                    schema: document.getElementById('mainTableSchema').value
+                };
+                
+                // Vérification des données obligatoires
+                if (!mainTable.name) {
+                    this.showToast('Veuillez spécifier un nom pour la table principale.', 'error');
+                    document.getElementById('mainTableName').focus();
+                    return;
+                }
+                
+                // Tables liées
+                const linkedTables = [];
+                document.querySelectorAll('#linkedTables .linked-table').forEach(element => {
+                    const joinType = element.querySelector('select').value;
+                    const inputs = element.querySelectorAll('input');
+                    
+                    linkedTables.push({
+                        joinType: joinType,
+                        tableName: inputs[0].value,
+                        type: inputs[1].value,
+                        alias: inputs[2].value,
+                        sourceColumn: inputs[3].value,
+                        destColumn: inputs[4].value
+                    });
+                });
+                
+                // Création d'un schéma SQL
+                let schemaSQL = `-- Schéma généré pour ${dataSource}\n`;
+                schemaSQL += `-- Source: ${dbAddress}\n`;
+                schemaSQL += `-- Date de génération: ${new Date().toLocaleString('fr-FR')}\n\n`;
+                schemaSQL += `SELECT\n`;
+                
+                // Ajouter les colonnes définies par l'utilisateur
+                this.columns.forEach((column, index) => {
+                    const columnAlias = document.getElementById(`columnAlias_${column.id}`) ? 
+                                    document.getElementById(`columnAlias_${column.id}`).value : '';
+                    const columnFormula = document.getElementById(`columnFormula_${column.id}`) ?
+                                        document.getElementById(`columnFormula_${column.id}`).value : '';
+                    
+                    const tablePrefix = columnAlias || mainTable.alias ? 
+                                    `${columnAlias || mainTable.alias}.` : '';
+                    
+                    schemaSQL += `    ${tablePrefix}${column.key}`;
+                    
+                    // Ajouter un alias si le nom de la colonne est différent de la clé
+                    if (column.name && column.name !== column.key) {
+                        schemaSQL += ` AS "${column.name}"`;
+                    }
+                    
+                    // Ajouter une formule si elle est définie
+                    if (columnFormula) {
+                        schemaSQL += ` /* ${columnFormula} */`;
+                    }
+                    
+                    if (index < this.columns.length - 1) {
+                        schemaSQL += `,`;
+                    }
+                    schemaSQL += `\n`;
+                });
+                
+                // Table principale
+                schemaSQL += `FROM ${mainTable.schema ? mainTable.schema + '.' : ''}${mainTable.name}`;
+                if (mainTable.alias) {
+                    schemaSQL += ` AS ${mainTable.alias}`;
+                }
+                schemaSQL += `\n`;
+                
+                // Tables liées
+                linkedTables.forEach(table => {
+                    if (table.tableName && table.joinType) {
+                        schemaSQL += `${table.joinType} JOIN `;
+                        if (table.type) {
+                            schemaSQL += `${table.type}.`;
+                        }
+                        schemaSQL += `${table.tableName}`;
+                        
+                        if (table.alias) {
+                            schemaSQL += ` AS ${table.alias}`;
+                        }
+                        
+                        if (table.sourceColumn && table.destColumn) {
+                            schemaSQL += ` ON ${table.sourceColumn} = ${table.destColumn}`;
+                        }
+                        
+                        schemaSQL += `\n`;
+                    }
+                });
+                
+                // Afficher le résultat
+                document.getElementById('schemaResult').textContent = schemaSQL;
+                document.getElementById('resultSection').style.display = 'block';
+                
+                // Faire défiler jusqu'au résultat
+                document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+                
+                this.showToast('Schéma généré avec succès', 'success');
+            }
+    
+            // Copier dans le presse-papier
+            copyToClipboard() {
+                const schemaText = document.getElementById('schemaResult').textContent;
+                
+                navigator.clipboard.writeText(schemaText)
+                    .then(() => {
+                        this.showToast('Schéma copié dans le presse-papier', 'success');
+                    })
+                    .catch(err => {
+                        console.error('Erreur lors de la copie: ', err);
+                        this.showToast('Impossible de copier le texte', 'error');
+                    });
+            }
+    
+            // Télécharger le schéma
+            downloadSchema() {
+                const schemaText = document.getElementById('schemaResult').textContent;
+                const blob = new Blob([schemaText], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'schema_bd_' + new Date().toISOString().split('T')[0] + '.sql';
+                document.body.appendChild(a);
+                a.click();
+                
+                // Nettoyer
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 0);
+                
+                this.showToast('Téléchargement démarré', 'info');
+            }
+
+            exportToCSV() {
+                // Vérifier s'il y a des données à exporter
+                if (this.fakeData.length === 0 || this.columns.length === 0) {
+                    this.showToast('Aucune donnée à exporter', 'error');
+                    return;
+                }
+                
+                // Créer l'en-tête CSV avec les noms des colonnes
+                let csvContent = this.columns.map(col => `"${col.name.replace(/"/g, '""')}"`).join(',') + '\n';
+                
+                // Ajouter les lignes de données
+                this.fakeData.forEach(row => {
+                    const csvRow = this.columns.map(col => {
+                        // Échapper les guillemets et formater correctement pour CSV
+                        const value = row[col.key] !== undefined ? row[col.key].toString() : '';
+                        return `"${value.replace(/"/g, '""')}"`;
+                    }).join(',');
+                    csvContent += csvRow + '\n';
+                });
+                
+                // Créer un objet Blob pour le contenu CSV
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                
+                // Créer un lien de téléchargement
+                const link = document.createElement('a');
+                link.setAttribute('href', url);
+                link.setAttribute('download', 'donnees_schema_' + new Date().toISOString().split('T')[0] + '.csv');
+                link.style.display = 'none';
+                
+                // Ajouter au document et déclencher le téléchargement
+                document.body.appendChild(link);
+                link.click();
+                
+                // Nettoyer
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                
+                this.showToast('Données exportées en CSV', 'success');
+            }
+    
+            // Fonctions utilitaires pour générer des données aléatoires
+            randomDate() {
+                const start = new Date(2023, 0, 1);
+                const end = new Date();
+                return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()))
+                    .toLocaleDateString('fr-FR');
+            }
+            
+            randomPrice() {
+                return (Math.random() * 10000000).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' Fcfa';
+            }
+        }
+
+        // Initialiser le gestionnaire de schéma
+        const schemaManager = new SchemaManager();
+
+        // Pour la rétrocompatibilité avec les anciennes fonctions globales
+        function changePage(direction) {
+            schemaManager.changePage(direction);
+        }
+    </script>
+</body>
+</html>
