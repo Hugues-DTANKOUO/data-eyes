@@ -24,192 +24,178 @@ Data-eyes est une application web suivant le pattern MVC (Modèle-Vue-Contrôleu
 
 ### Diagramme d'architecture globale
 
-```
-+-------------------+          +---------------------+
-|                   |          |                     |
-|  Interface Web    |<-------->|  FastAPI Backend    |
-|  (HTML/CSS/JS)    |   HTTP   |                     |
-|                   |          |                     |
-+-------------------+          +---------+-----------+
-                                         |
-                                         | Utilise
-                                         v
-                      +------------------+------------------+
-                      |                                     |
-                      |  +----------------+  +-----------+  |
-                      |  |                |  |           |  |
-                      |  | Processeurs    |  | Générateur|  |
-                      |  | de Données     |  | SQL       |  |
-                      |  |                |  |           |  |
-                      |  +----------------+  +-----------+  |
-                      |                                     |
-                      +-------------------------------------+
+```mermaid
+flowchart TD
+    UI[Interface Web\nHTML/CSS/JS] <-->|HTTP| BE[Backend FastAPI]
+    BE --> Core[Composants Core]
+    Core --> DP[Processeurs de Données]
+    Core --> SG[Générateur SQL]
+    DP --> CSV[Fichiers CSV]
+    DP --> JSON[Fichiers JSON]
+    DP --> EXT[Sources Externes]
 ```
 
 ## Architecture applicative
 
 L'application Data-eyes suit une architecture modulaire pour faciliter la maintenance et l'évolution du code.
 
-```plantuml
-@startuml
-package "Frontend" {
-  [Templates HTML/Jinja2] as Templates
-  [Static Assets] as Static
-  [JavaScript Client] as JS
-}
-
-package "Backend" {
-  [Interface Module] as Interface
-  [Data Handler] as DataHandler
-  [SQL Generator] as SQLGen
-  [Processors] as Processors
-}
-
-package "Data Sources" {
-  [CSV Files] as CSV
-  [JSON Files] as JSON
-  [External Sources] as External
-}
-
-JS --> Interface : HTTP Requests
-Interface --> Templates : Renders
-Interface --> DataHandler : Uses
-DataHandler --> Processors : Uses
-Processors --> CSV : Reads/Writes
-Processors --> JSON : Reads/Writes
-Processors --> External : Connects
-DataHandler --> SQLGen : Uses
-@enduml
+```mermaid
+flowchart LR
+    subgraph Frontend
+        T[Templates HTML/Jinja2]
+        S[Ressources Statiques]
+        JS[Client JavaScript]
+    end
+    
+    subgraph Backend
+        I[Module Interface]
+        DH[Gestionnaire de Données]
+        SG[Générateur SQL]
+        P[Processeurs]
+    end
+    
+    subgraph "Sources de Données"
+        CSV[Fichiers CSV]
+        JSON[Fichiers JSON]
+        EXT[Sources Externes]
+    end
+    
+    JS -->|Requêtes HTTP| I
+    I -->|Rend| T
+    I -->|Utilise| DH
+    DH -->|Utilise| P
+    P -->|Lecture/Écriture| CSV
+    P -->|Lecture/Écriture| JSON
+    P -->|Se connecte à| EXT
+    DH -->|Utilise| SG
 ```
 
 ## Diagramme de classes
 
 Le diagramme de classes présente la structure des principales entités de l'application.
 
-```plantuml
-@startuml
-class DataHandler {
-  -csv_processor: CSVProcessor
-  -json_processor: JSONProcessor
-  -sql_generator: SQLGenerator
-  -current_data: List
-  -columns: List[Column]
-  +process_file(file: UploadFile): Dict
-  +generate_schema(config: Dict): Dict
-  +filter_data(filters: List): Dict
-}
+```mermaid
+classDiagram
+    class DataHandler {
+        -csv_processor: CSVProcessor
+        -json_processor: JSONProcessor
+        -sql_generator: SQLGenerator
+        -current_data: List
+        -columns: List~Column~
+        +process_file(file: UploadFile): Dict
+        +generate_schema(config: Dict): Dict
+        +filter_data(filters: List): Dict
+    }
 
-class Processor {
-  +process(content: bytes): Dict
-}
+    class Processor {
+        +process(content: bytes): Dict
+    }
 
-class CSVProcessor {
-  +process(content: bytes): Dict
-  -_clean_key(column_name: str): str
-}
+    class CSVProcessor {
+        +process(content: bytes): Dict
+        -_clean_key(column_name: str): str
+    }
 
-class JSONProcessor {
-  +process(content: bytes): Dict
-  -_extract_schema(data: List): List[Column]
-}
+    class JSONProcessor {
+        +process(content: bytes): Dict
+        -_extract_schema(data: List): List~Column~
+    }
 
-class SQLGenerator {
-  +generate(main_table: str, columns: List, table_alias: str, joins: List): str
-  -_build_select_clause(columns: List, table_alias: str): str
-  -_build_from_clause(table: str, alias: str): str
-  -_build_join_clause(joins: List): str
-}
+    class SQLGenerator {
+        +generate(main_table: str, columns: List, table_alias: str, joins: List): str
+        -_build_select_clause(columns: List, table_alias: str): str
+        -_build_from_clause(table: str, alias: str): str
+        -_build_join_clause(joins: List): str
+    }
 
-class Column {
-  +id: int
-  +name: str
-  +key: str
-  +data_type: str
-  +table: str
-  +alias: str
-  +formula: str
-  +include: bool
-  +to_dict(): Dict
-  +to_sql(with_alias: bool): str
-}
+    class Column {
+        +id: int
+        +name: str
+        +key: str
+        +data_type: str
+        +table: str
+        +alias: str
+        +formula: str
+        +include: bool
+        +to_dict(): Dict
+        +to_sql(with_alias: bool): str
+    }
 
-class JoinCondition {
-  +source_table: str
-  +source_column: str
-  +target_table: str
-  +target_column: str
-  +join_type: str
-  +to_sql(): str
-}
+    class JoinCondition {
+        +source_table: str
+        +source_column: str
+        +target_table: str
+        +target_column: str
+        +join_type: str
+        +to_sql(): str
+    }
 
-class Schema {
-  +main_table: str
-  +main_alias: str
-  +columns: List[Column]
-  +joins: List[JoinCondition]
-  +to_dict(): Dict
-  +to_sql(): str
-}
+    class Schema {
+        +main_table: str
+        +main_alias: str
+        +columns: List~Column~
+        +joins: List~JoinCondition~
+        +to_dict(): Dict
+        +to_sql(): str
+    }
 
-class DataSource {
-  +type: str
-  +path: str
-  +connection_params: Dict
-  +to_dict(): Dict
-}
+    class DataSource {
+        +type: str
+        +path: str
+        +connection_params: Dict
+        +to_dict(): Dict
+    }
 
-DataHandler --> CSVProcessor : uses
-DataHandler --> JSONProcessor : uses
-DataHandler --> SQLGenerator : uses
-DataHandler --> Column : manages
-DataHandler --> Schema : creates
+    DataHandler --> CSVProcessor : utilise
+    DataHandler --> JSONProcessor : utilise
+    DataHandler --> SQLGenerator : utilise
+    DataHandler --> Column : gère
+    DataHandler --> Schema : crée
 
-Processor <|-- CSVProcessor
-Processor <|-- JSONProcessor
+    Processor <|-- CSVProcessor
+    Processor <|-- JSONProcessor
 
-Schema --> Column : contains
-Schema --> JoinCondition : contains
+    Schema --> Column : contient
+    Schema --> JoinCondition : contient
 
-DataHandler --> DataSource : uses
-@enduml
+    DataHandler --> DataSource : utilise
 ```
 
 ## Flux de données
 
 Ce diagramme illustre le flux de données typique lors de l'utilisation de l'application.
 
-```plantuml
-@startuml
-actor User
-participant "Frontend\n(Browser)" as Browser
-participant "Interface\n(interface.py)" as Interface
-participant "DataHandler" as DataHandler
-participant "Processors" as Processors
-participant "SQLGenerator" as SQLGen
+```mermaid
+sequenceDiagram
+    actor Utilisateur
+    participant Navigateur as Frontend (Navigateur)
+    participant Interface as Interface (interface.py)
+    participant DataHandler as Gestionnaire de Données
+    participant Processors as Processeurs
+    participant SQLGen as Générateur SQL
 
-User -> Browser : Upload CSV file
-Browser -> Interface : POST /api/data/upload
-Interface -> DataHandler : process_file()
-DataHandler -> Processors : load_csv()
-Processors --> DataHandler : Structured data
-DataHandler --> Interface : Response object
-Interface --> Browser : JSON response
-Browser --> User : Display data preview
+    Utilisateur->>Navigateur: Upload fichier CSV
+    Navigateur->>Interface: POST /api/data/upload
+    Interface->>DataHandler: process_file()
+    DataHandler->>Processors: load_csv()
+    Processors-->>DataHandler: Données structurées
+    DataHandler-->>Interface: Objet de réponse
+    Interface-->>Navigateur: Réponse JSON
+    Navigateur-->>Utilisateur: Affichage aperçu des données
 
-User -> Browser : Configure columns
-Browser -> Interface : POST /api/schema/generate
-Interface -> DataHandler : build_schema()
-DataHandler -> SQLGen : generate_sql()
-SQLGen --> DataHandler : SQL query
-DataHandler --> Interface : SQL response
-Interface --> Browser : JSON with SQL query
-Browser --> User : Display SQL query
-@enduml
+    Utilisateur->>Navigateur: Configure les colonnes
+    Navigateur->>Interface: POST /api/schema/generate
+    Interface->>DataHandler: build_schema()
+    DataHandler->>SQLGen: generate_sql()
+    SQLGen-->>DataHandler: Requête SQL
+    DataHandler-->>Interface: Réponse SQL
+    Interface-->>Navigateur: JSON avec requête SQL
+    Navigateur-->>Utilisateur: Affichage requête SQL
 ```
 
 ## Composants principaux
 
-### Interface Module (interface.py)
+### Module Interface (interface.py)
 
 Ce module sert de point d'entrée pour l'application FastAPI. Il définit les routes et les endpoints API, et coordonne les autres composants du système.
 
@@ -219,7 +205,7 @@ Ce module sert de point d'entrée pour l'application FastAPI. Il définit les ro
 - Gestion des requêtes/réponses
 - Rendu des templates HTML
 
-### Data Handler
+### Gestionnaire de données
 
 Le gestionnaire de données centralise la logique métier pour la manipulation des données.
 
@@ -309,6 +295,34 @@ Ce module est responsable de la génération de requêtes SQL basées sur la con
    - Méthodes : to_sql()
 
 ### Flux de traitement des données
+
+```mermaid
+flowchart TD
+    L[Chargement] --> P[Parsing]
+    P --> S[Structuration]
+    S --> T[Transformation]
+    T --> G[Génération]
+    
+    L1[Lecture du fichier source] --> L
+    L2[Détection du format] --> L
+    L3[Validation initiale] --> L
+    
+    P1[Extraction des données] --> P
+    P2[Inférence des types] --> P
+    P3[Normalisation] --> P
+    
+    S1[Création des métadonnées] --> S
+    S2[Construction des modèles] --> S
+    S3[Indexation pour performance] --> S
+    
+    T1[Application des filtres] --> T
+    T2[Tri et regroupement] --> T
+    T3[Calculs et formules] --> T
+    
+    G1[Construction des requêtes SQL] --> G
+    G2[Optimisation] --> G
+    G3[Export des résultats] --> G
+```
 
 1. **Chargement**
    - Lecture du fichier source

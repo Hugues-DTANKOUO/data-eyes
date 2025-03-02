@@ -59,7 +59,7 @@ C'est un projet pratique pour renforcer vos compétences en Python et fournir un
 
 ## 🤝 **Contribuer**
 
-Vos idées et efforts sont chaleureusement accueillis ! Jetez un œil à notre [Guide de Contribution](CONTRIBUTING.md) pour voir comment vous pouvez :  
+Vos idées et efforts sont chaleureusement accueillis ! Jetez un œil à notre [Guide de Contribution](CONTRIBUTING.fr.md) pour voir comment vous pouvez :  
 - Configurer le projet sur votre propre système  
 - Suivre notre flux de développement  
 - Respecter nos directives de style de code  

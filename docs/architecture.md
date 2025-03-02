@@ -24,187 +24,173 @@ Data-eyes is a web application following the MVC (Model-View-Controller) pattern
 
 ### Global Architecture Diagram
 
-```
-+-------------------+          +---------------------+
-|                   |          |                     |
-|  Web Interface    |<-------->|  FastAPI Backend    |
-|  (HTML/CSS/JS)    |   HTTP   |                     |
-|                   |          |                     |
-+-------------------+          +---------+-----------+
-                                         |
-                                         | Uses
-                                         v
-                      +------------------+------------------+
-                      |                                     |
-                      |  +----------------+  +-----------+  |
-                      |  |                |  |           |  |
-                      |  | Data           |  | SQL       |  |
-                      |  | Processors     |  | Generator |  |
-                      |  |                |  |           |  |
-                      |  +----------------+  +-----------+  |
-                      |                                     |
-                      +-------------------------------------+
+```mermaid
+flowchart TD
+    UI[Web Interface\nHTML/CSS/JS] <-->|HTTP| BE[FastAPI Backend]
+    BE --> Core[Core Components]
+    Core --> DP[Data Processors]
+    Core --> SG[SQL Generator]
+    DP --> CSV[CSV Files]
+    DP --> JSON[JSON Files]
+    DP --> EXT[External Sources]
 ```
 
 ## Application Architecture
 
 The Data-eyes application follows a modular architecture to facilitate code maintenance and evolution.
 
-```plantuml
-@startuml
-package "Frontend" {
-  [Templates HTML/Jinja2] as Templates
-  [Static Assets] as Static
-  [JavaScript Client] as JS
-}
-
-package "Backend" {
-  [Interface Module] as Interface
-  [Data Handler] as DataHandler
-  [SQL Generator] as SQLGen
-  [Processors] as Processors
-}
-
-package "Data Sources" {
-  [CSV Files] as CSV
-  [JSON Files] as JSON
-  [External Sources] as External
-}
-
-JS --> Interface : HTTP Requests
-Interface --> Templates : Renders
-Interface --> DataHandler : Uses
-DataHandler --> Processors : Uses
-Processors --> CSV : Reads/Writes
-Processors --> JSON : Reads/Writes
-Processors --> External : Connects
-DataHandler --> SQLGen : Uses
-@enduml
+```mermaid
+flowchart LR
+    subgraph Frontend
+        T[Templates HTML/Jinja2]
+        S[Static Assets]
+        JS[JavaScript Client]
+    end
+    
+    subgraph Backend
+        I[Interface Module]
+        DH[Data Handler]
+        SG[SQL Generator]
+        P[Processors]
+    end
+    
+    subgraph "Data Sources"
+        CSV[CSV Files]
+        JSON[JSON Files]
+        EXT[External Sources]
+    end
+    
+    JS -->|HTTP Requests| I
+    I -->|Renders| T
+    I -->|Uses| DH
+    DH -->|Uses| P
+    P -->|Reads/Writes| CSV
+    P -->|Reads/Writes| JSON
+    P -->|Connects| EXT
+    DH -->|Uses| SG
 ```
 
 ## Class Diagram
 
 The class diagram presents the structure of the main entities of the application.
 
-```plantuml
-@startuml
-class DataHandler {
-  -csv_processor: CSVProcessor
-  -json_processor: JSONProcessor
-  -sql_generator: SQLGenerator
-  -current_data: List
-  -columns: List[Column]
-  +process_file(file: UploadFile): Dict
-  +generate_schema(config: Dict): Dict
-  +filter_data(filters: List): Dict
-}
+```mermaid
+classDiagram
+    class DataHandler {
+        -csv_processor: CSVProcessor
+        -json_processor: JSONProcessor
+        -sql_generator: SQLGenerator
+        -current_data: List
+        -columns: List~Column~
+        +process_file(file: UploadFile): Dict
+        +generate_schema(config: Dict): Dict
+        +filter_data(filters: List): Dict
+    }
 
-class Processor {
-  +process(content: bytes): Dict
-}
+    class Processor {
+        +process(content: bytes): Dict
+    }
 
-class CSVProcessor {
-  +process(content: bytes): Dict
-  -_clean_key(column_name: str): str
-}
+    class CSVProcessor {
+        +process(content: bytes): Dict
+        -_clean_key(column_name: str): str
+    }
 
-class JSONProcessor {
-  +process(content: bytes): Dict
-  -_extract_schema(data: List): List[Column]
-}
+    class JSONProcessor {
+        +process(content: bytes): Dict
+        -_extract_schema(data: List): List~Column~
+    }
 
-class SQLGenerator {
-  +generate(main_table: str, columns: List, table_alias: str, joins: List): str
-  -_build_select_clause(columns: List, table_alias: str): str
-  -_build_from_clause(table: str, alias: str): str
-  -_build_join_clause(joins: List): str
-}
+    class SQLGenerator {
+        +generate(main_table: str, columns: List, table_alias: str, joins: List): str
+        -_build_select_clause(columns: List, table_alias: str): str
+        -_build_from_clause(table: str, alias: str): str
+        -_build_join_clause(joins: List): str
+    }
 
-class Column {
-  +id: int
-  +name: str
-  +key: str
-  +data_type: str
-  +table: str
-  +alias: str
-  +formula: str
-  +include: bool
-  +to_dict(): Dict
-  +to_sql(with_alias: bool): str
-}
+    class Column {
+        +id: int
+        +name: str
+        +key: str
+        +data_type: str
+        +table: str
+        +alias: str
+        +formula: str
+        +include: bool
+        +to_dict(): Dict
+        +to_sql(with_alias: bool): str
+    }
 
-class JoinCondition {
-  +source_table: str
-  +source_column: str
-  +target_table: str
-  +target_column: str
-  +join_type: str
-  +to_sql(): str
-}
+    class JoinCondition {
+        +source_table: str
+        +source_column: str
+        +target_table: str
+        +target_column: str
+        +join_type: str
+        +to_sql(): str
+    }
 
-class Schema {
-  +main_table: str
-  +main_alias: str
-  +columns: List[Column]
-  +joins: List[JoinCondition]
-  +to_dict(): Dict
-  +to_sql(): str
-}
+    class Schema {
+        +main_table: str
+        +main_alias: str
+        +columns: List~Column~
+        +joins: List~JoinCondition~
+        +to_dict(): Dict
+        +to_sql(): str
+    }
 
-class DataSource {
-  +type: str
-  +path: str
-  +connection_params: Dict
-  +to_dict(): Dict
-}
+    class DataSource {
+        +type: str
+        +path: str
+        +connection_params: Dict
+        +to_dict(): Dict
+    }
 
-DataHandler --> CSVProcessor : uses
-DataHandler --> JSONProcessor : uses
-DataHandler --> SQLGenerator : uses
-DataHandler --> Column : manages
-DataHandler --> Schema : creates
+    DataHandler --> CSVProcessor : uses
+    DataHandler --> JSONProcessor : uses
+    DataHandler --> SQLGenerator : uses
+    DataHandler --> Column : manages
+    DataHandler --> Schema : creates
 
-Processor <|-- CSVProcessor
-Processor <|-- JSONProcessor
+    Processor <|-- CSVProcessor
+    Processor <|-- JSONProcessor
 
-Schema --> Column : contains
-Schema --> JoinCondition : contains
+    Schema --> Column : contains
+    Schema --> JoinCondition : contains
 
-DataHandler --> DataSource : uses
-@enduml
+    DataHandler --> DataSource : uses
 ```
 
 ## Data Flow
 
 This diagram illustrates the typical data flow when using the application.
 
-```plantuml
-@startuml
-actor User
-participant "Frontend\n(Browser)" as Browser
-participant "Interface\n(interface.py)" as Interface
-participant "DataHandler" as DataHandler
-participant "Processors" as Processors
-participant "SQLGenerator" as SQLGen
+```mermaid
+sequenceDiagram
+    actor User
+    participant Browser as Frontend (Browser)
+    participant Interface as Interface (interface.py)
+    participant DataHandler
+    participant Processors
+    participant SQLGen as SQLGenerator
 
-User -> Browser : Upload CSV file
-Browser -> Interface : POST /api/data/upload
-Interface -> DataHandler : process_file()
-DataHandler -> Processors : load_csv()
-Processors --> DataHandler : Structured data
-DataHandler --> Interface : Response object
-Interface --> Browser : JSON response
-Browser --> User : Display data preview
+    User->>Browser: Upload CSV file
+    Browser->>Interface: POST /api/data/upload
+    Interface->>DataHandler: process_file()
+    DataHandler->>Processors: load_csv()
+    Processors-->>DataHandler: Structured data
+    DataHandler-->>Interface: Response object
+    Interface-->>Browser: JSON response
+    Browser-->>User: Display data preview
 
-User -> Browser : Configure columns
-Browser -> Interface : POST /api/schema/generate
-Interface -> DataHandler : build_schema()
-DataHandler -> SQLGen : generate_sql()
-SQLGen --> DataHandler : SQL query
-DataHandler --> Interface : SQL response
-Interface --> Browser : JSON with SQL query
-Browser --> User : Display SQL query
-@enduml
+    User->>Browser: Configure columns
+    Browser->>Interface: POST /api/schema/generate
+    Interface->>DataHandler: build_schema()
+    DataHandler->>SQLGen: generate_sql()
+    SQLGen-->>DataHandler: SQL query
+    DataHandler-->>Interface: SQL response
+    Interface-->>Browser: JSON with SQL query
+    Browser-->>User: Display SQL query
 ```
 
 ## Main Components
@@ -309,6 +295,34 @@ This module is responsible for generating SQL queries based on user configuratio
    - Methods: to_sql()
 
 ### Data Processing Flow
+
+```mermaid
+flowchart TD
+    L[Loading] --> P[Parsing]
+    P --> S[Structuring]
+    S --> T[Transformation]
+    T --> G[Generation]
+    
+    L1[Read source file] --> L
+    L2[Detect format] --> L
+    L3[Initial validation] --> L
+    
+    P1[Extract data] --> P
+    P2[Infer types] --> P
+    P3[Normalize] --> P
+    
+    S1[Create metadata] --> S
+    S2[Build models] --> S
+    S3[Index for performance] --> S
+    
+    T1[Apply filters] --> T
+    T2[Sort and group] --> T
+    T3[Calculate] --> T
+    
+    G1[Build SQL] --> G
+    G2[Optimize] --> G
+    G3[Export] --> G
+```
 
 1. **Loading**
    - Reading the source file

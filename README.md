@@ -49,8 +49,6 @@ This is a hands-on project to strengthen your Python skills and provide a lightw
 
 ---
 
----
-
 ## 📂 **Key Features**
 
 - **Data Loading:** Effortlessly import CSV and JSON files to start working with your data.  

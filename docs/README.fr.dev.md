@@ -58,7 +58,6 @@ Si vous utilisez VS Code, voici la configuration recommandée pour ce projet. Cr
     "editor.formatOnSave": true,
     "python.formatting.provider": "ruff",
     "python.testing.pytestEnabled": true,
-    "plantuml.server": "http://www.plantuml.com/plantuml",
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnSave": true,
